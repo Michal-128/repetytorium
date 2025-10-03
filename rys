@@ -1,1 +1,66 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 
+public class Rys extends JFrame {
+    private RysPanel drawingPanel;
+    private String currentShape = "Prostokąt";
+    private Color currentColor = Color.BLACK;
+
+    public Rys() {
+        setTitle("Rysowanie");
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+
+        drawingPanel = new RysPanel();
+        add(drawingPanel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel();
+
+        JButton prostokatButton = new JButton("Prostokąt");
+        JButton okragButton = new JButton("Okrąg");
+        JButton liniaButton = new JButton("Linia");
+        JButton wielokatButton = new JButton("Wielokąt");
+        JButton wyczyscButton = new JButton("Wyczyść");
+        JButton zapiszButton = new JButton("Zapisz");
+        JButton wczytajButton = new JButton("Wczytaj");
+        JButton kolorButton = new JButton("Wybierz kolor");
+
+        prostokatButton.addActionListener(e -> currentShape = "Prostokąt");
+        okragButton.addActionListener(e -> currentShape = "Okrąg");
+        liniaButton.addActionListener(e -> currentShape = "Linia");
+        wielokatButton.addActionListener(e -> currentShape = "Wielokąt");
+        wyczyscButton.addActionListener(e -> drawingPanel.clearCanvas());
+        zapiszButton.addActionListener(e -> drawingPanel.saveImage());
+        wczytajButton.addActionListener(e -> drawingPanel.loadImage());
+        kolorButton.addActionListener(e -> {
+            Color chosen = JColorChooser.showDialog(this, "Wybierz kolor", currentColor);
+            if (chosen != null) {
+                currentColor = chosen;
+            }
+        });
+
+        buttonPanel.add(prostokatButton);
+        buttonPanel.add(okragButton);
+        buttonPanel.add(liniaButton);
+        buttonPanel.add(wielokatButton);
+        buttonPanel.add(wyczyscButton);
+        buttonPanel.add(zapiszButton);
+        buttonPanel.add(wczytajButton);
+        buttonPanel.add(kolorButton);
+
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        drawingPanel.setShapeProvider(() -> currentShape);
+        drawingPanel.setColorProvider(() -> currentColor);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            Rys r = new Rys();
+            r.setVisible(true);
+        });
+    }
+}
