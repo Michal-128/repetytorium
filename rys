@@ -18,7 +18,7 @@ public class Rys extends JFrame {
         add(drawingPanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel();
-
+        JButton pedzelButton = new JButton("Pędzel");
         JButton prostokatButton = new JButton("Prostokąt");
         JButton okragButton = new JButton("Okrąg");
         JButton liniaButton = new JButton("Linia");
@@ -28,6 +28,7 @@ public class Rys extends JFrame {
         JButton wczytajButton = new JButton("Wczytaj");
         JButton kolorButton = new JButton("Wybierz kolor");
 
+        pedzelButton.addActionListener(e -> currentShape = "Pędzel");
         prostokatButton.addActionListener(e -> currentShape = "Prostokąt");
         okragButton.addActionListener(e -> currentShape = "Okrąg");
         liniaButton.addActionListener(e -> currentShape = "Linia");
@@ -41,7 +42,7 @@ public class Rys extends JFrame {
                 currentColor = chosen;
             }
         });
-
+        buttonPanel.add(pedzelButton);
         buttonPanel.add(prostokatButton);
         buttonPanel.add(okragButton);
         buttonPanel.add(liniaButton);
