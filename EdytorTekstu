@@ -1,0 +1,159 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+public class TextEditor extends JFrame {
+
+    private JTextArea textArea;
+    private JLabel statusLabel;
+    private JComboBox<String> fontBox;
+    private JComboBox<Integer> sizeBox;
+    private JCheckBox wrapBox;
+    private JButton boldBtn, italicBtn, copyBtn, cutBtn, pasteBtn;
+    private JButton colorBtn, bgBtn;
+    private JFileChooser fileChooser;
+    private boolean isBold = false, isItalic = false;
+
+    public TextEditor() {
+        setTitle("Edytor Tekstu");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(800, 600);
+        setLayout(new BorderLayout());
+
+        JMenuBar menuBar = new JMenuBar();
+        JMenu fileMenu = new JMenu("Plik");
+        JMenuItem openItem = new JMenuItem("Otwórz");
+        JMenuItem saveItem = new JMenuItem("Zapisz");
+        JMenuItem exitItem = new JMenuItem("Zakończ");
+
+        fileMenu.add(openItem);
+        fileMenu.add(saveItem);
+        fileMenu.add(exitItem);
+        menuBar.add(fileMenu);
+        setJMenuBar(menuBar);
+
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+        String[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getAvailableFontFamilyNames();
+        fontBox = new JComboBox<>(fonts);
+        fontBox.setSelectedItem("Arial");
+        topPanel.add(fontBox);
+
+        Integer[] sizes = {8, 10, 12, 14, 16, 18, 20, 22, 24, 28, 32};
+        sizeBox = new JComboBox<>(sizes);
+        sizeBox.setSelectedItem(18);
+        topPanel.add(sizeBox);
+
+        boldBtn = new JButton("B");
+        boldBtn.setFont(new Font("Arial", Font.BOLD, 12));
+        italicBtn = new JButton("I");
+        italicBtn.setFont(new Font("Arial", Font.ITALIC, 12));
+        topPanel.add(boldBtn);
+        topPanel.add(italicBtn);
+
+        colorBtn = new JButton("Kolor czcionki");
+        bgBtn = new JButton("Kolor tła");
+        topPanel.add(colorBtn);
+        topPanel.add(bgBtn);
+
+        wrapBox = new JCheckBox("Zawijaj tekst");
+        wrapBox.setSelected(true);
+        topPanel.add(wrapBox);
+
+        copyBtn = new JButton("Kopiuj");
+        cutBtn = new JButton("Wytnij");
+        pasteBtn = new JButton("Wklej");
+        topPanel.add(copyBtn);
+        topPanel.add(cutBtn);
+        topPanel.add(pasteBtn);
+
+        add(topPanel, BorderLayout.NORTH);
+
+        textArea = new JTextArea();
+        textArea.setFont(new Font("Arial", Font.PLAIN, 18));
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        add(scrollPane, BorderLayout.CENTER);
+
+        statusLabel = new JLabel("Znaków: 0");
+        add(statusLabel, BorderLayout.SOUTH);
+
+        fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Pliki tekstowe (*.txt)", "txt"));
+
+        openItem.addActionListener(e -> openFile());
+        saveItem.addActionListener(e -> saveFile());
+        exitItem.addActionListener(e -> System.exit(0));
+
+        fontBox.addActionListener(e -> updateFont());
+        sizeBox.addActionListener(e -> updateFont());
+        boldBtn.addActionListener(e -> { isBold = !isBold; updateFont(); });
+        italicBtn.addActionListener(e -> { isItalic = !isItalic; updateFont(); });
+
+        colorBtn.addActionListener(e -> {
+            Color color = JColorChooser.showDialog(null, "Wybierz kolor czcionki", Color.BLACK);
+            if (color != null) textArea.setForeground(color);
+        });
+        bgBtn.addActionListener(e -> {
+            Color color = JColorChooser.showDialog(null, "Wybierz kolor tła", Color.WHITE);
+            if (color != null) textArea.setBackground(color);
+        });
+
+        wrapBox.addActionListener(e -> textArea.setLineWrap(wrapBox.isSelected()));
+
+        copyBtn.addActionListener(e -> textArea.copy());
+        cutBtn.addActionListener(e -> textArea.cut());
+        pasteBtn.addActionListener(e -> textArea.paste());
+
+        textArea.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { updateCount(); }
+            public void removeUpdate(DocumentEvent e) { updateCount(); }
+            public void changedUpdate(DocumentEvent e) { updateCount(); }
+        });
+
+        setVisible(true);
+    }
+
+    private void updateCount() {
+        statusLabel.setText("Znaków: " + textArea.getText().length());
+    }
+
+    private void updateFont() {
+        String font = (String) fontBox.getSelectedItem();
+        int size = (int) sizeBox.getSelectedItem();
+        int style = (isBold ? Font.BOLD : Font.PLAIN) | (isItalic ? Font.ITALIC : Font.PLAIN);
+        textArea.setFont(new Font(font, style, size));
+    }
+
+    private void openFile() {
+        int option = fileChooser.showOpenDialog(this);
+        if (option == JFileChooser.APPROVE_OPTION) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(fileChooser.getSelectedFile()))) {
+                textArea.read(reader, null);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Błąd podczas otwierania pliku.");
+            }
+        }
+    }
+
+    private void saveFile() {
+        int option = fileChooser.showSaveDialog(this);
+        if (option == JFileChooser.APPROVE_OPTION) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileChooser.getSelectedFile()))) {
+                textArea.write(writer);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Błąd podczas zapisywania pliku.");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(TextEditor::new);
+    }
+}
