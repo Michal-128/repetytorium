@@ -1,0 +1,96 @@
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+
+public class ChatServer {
+    private static final int PORT = 12345;
+    private static Map<String, ClientHandler> clients = new ConcurrentHashMap<>();
+
+    public static void main(String[] args) {
+        System.out.println("Serwer czatu uruchomiony na porcie " + PORT);
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            while (true) {
+                Socket socket = serverSocket.accept();
+                new ClientHandler(socket).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void broadcast(String message) {
+        for (ClientHandler client : clients.values()) {
+            client.sendMessage(message);
+        }
+    }
+
+    public static void sendPrivate(String from, String to, String message) {
+        ClientHandler recipient = clients.get(to);
+        if (recipient != null) {
+            recipient.sendMessage("[Prywatna] " + from + ": " + message);
+        }
+    }
+
+    public static void updateUserList() {
+        String userList = "USERS:" + String.join(",", clients.keySet());
+        for (ClientHandler client : clients.values()) {
+            client.sendMessage(userList);
+        }
+    }
+
+    static class ClientHandler extends Thread {
+        private Socket socket;
+        private PrintWriter out;
+        private BufferedReader in;
+        private String login;
+
+        public ClientHandler(Socket socket) {
+            this.socket = socket;
+        }
+
+        public void run() {
+            try {
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                out = new PrintWriter(socket.getOutputStream(), true);
+
+                out.println("LOGIN?");
+                login = in.readLine();
+
+                clients.put(login, this);
+                System.out.println(login + " dołączył do czatu.");
+                broadcast(">> " + login + " dołączył do czatu!");
+                updateUserList();
+
+                String msg;
+                while ((msg = in.readLine()) != null) {
+                    if (msg.startsWith("@")) { // np. @Janek: Cześć!
+                        int idx = msg.indexOf(":");
+                        if (idx > 1) {
+                            String toUser = msg.substring(1, idx);
+                            String content = msg.substring(idx + 1).trim();
+                            sendPrivate(login, toUser, content);
+                        }
+                    } else {
+                        broadcast(login + ": " + msg);
+                    }
+                }
+            } catch (IOException e) {
+                System.out.println(login + " rozłączony.");
+            } finally {
+                try {
+                    clients.remove(login);
+                    broadcast(">> " + login + " opuścił czat.");
+                    updateUserList();
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public void sendMessage(String message) {
+            out.println(message);
+        }
+    }
+}
