@@ -1,0 +1,43 @@
+package Client;
+
+import java.io.*;
+import java.net.*;
+import java.util.Scanner;
+
+public class ChatClient {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Podaj adres serwera (np. localhost): ");
+        String host = scanner.nextLine();
+
+        try {
+            Socket socket = new Socket(host, 12345);
+            System.out.println("Połączono z serwerem!");
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+            Thread reader = new Thread(() -> {
+                String msg;
+                try {
+                    while ((msg = in.readLine()) != null) {
+                        System.out.println(msg);
+                    }
+                } catch (IOException e) {
+                    System.out.println("Rozłączono z serwerem.");
+                }
+            });
+            reader.start();
+
+            while (true) {
+                String line = scanner.nextLine();
+                out.println(line);
+                if (line.equalsIgnoreCase("exit")) break;
+            }
+
+            socket.close();
+        } catch (IOException e) {
+            System.out.println("Nie udało się połączyć z serwerem.");
+        }
+    }
+}
